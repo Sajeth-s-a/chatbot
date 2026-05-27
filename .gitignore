@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.DS_Store
+data/chroma/
+data/eval/reports/
+.pytest_cache/
+.ruff_cache/
+
+# SOP source documents — confidential, never commit
+resources/*.docx
+resources/*.doc
+resources/*.pdf
+~$*
