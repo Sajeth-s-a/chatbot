@@ -20,7 +20,7 @@ async def _embed_in_batches(client: OllamaClient, texts: list[str]) -> list[list
     out: list[list[float]] = []
     for i in range(0, len(texts), EMBED_BATCH):
         batch = texts[i : i + EMBED_BATCH]
-        out.extend(await client.embed(batch))
+        out.extend(client.embed(batch))
     return out
 
 
@@ -57,6 +57,14 @@ async def ingest_dir(directory: Path | None = None) -> list[dict]:
             results.append(await ingest_file(f))
         except Exception as e:
             results.append({"doc_name": f.name, "chunks": 0, "status": f"failed: {type(e).__name__}: {e}"})
+    # Rebuild the hybrid retriever (BM25 index) so /chat sees fresh chunks.
+    try:
+        from app.rag.retriever import get_retriever
+
+        n = get_retriever().reload()
+        print(f"[ingest] hybrid retriever reloaded: {n} chunks")
+    except Exception as e:
+        print(f"[ingest] retriever reload failed: {e}")
     return results
 
 

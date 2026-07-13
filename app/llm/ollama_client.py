@@ -1,3 +1,11 @@
+"""Lightweight sync HTTP wrapper around Ollama.
+
+We deliberately use sync httpx and let FastAPI offload the call via
+``run_in_threadpool``. Python 3.14 currently breaks the sniffio asyncio
+detection that httpx's async client + httpcore connection pool rely on,
+so the sync client is the most robust path until that's fixed upstream.
+"""
+
 from typing import Any
 
 import httpx
@@ -8,12 +16,12 @@ from app.config import settings
 class OllamaClient:
     def __init__(self, host: str | None = None, timeout: float = 120.0):
         self.host = (host or settings.ollama_host).rstrip("/")
-        self._client = httpx.AsyncClient(base_url=self.host, timeout=timeout)
+        self.timeout = timeout
 
-    async def aclose(self) -> None:
-        await self._client.aclose()
+    async def aclose(self) -> None:  # kept for lifespan compatibility
+        return None
 
-    async def chat(
+    def chat(
         self,
         messages: list[dict[str, str]],
         model: str | None = None,
@@ -26,21 +34,23 @@ class OllamaClient:
             "stream": False,
             "options": {"temperature": temperature, **(options or {})},
         }
-        resp = await self._client.post("/api/chat", json=payload)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["message"]["content"]
+        with httpx.Client(base_url=self.host, timeout=self.timeout) as c:
+            resp = c.post("/api/chat", json=payload)
+            resp.raise_for_status()
+            return resp.json()["message"]["content"]
 
-    async def embed(self, texts: list[str], model: str | None = None) -> list[list[float]]:
+    def embed(self, texts: list[str], model: str | None = None) -> list[list[float]]:
         payload = {"model": model or settings.embed_model, "input": texts}
-        resp = await self._client.post("/api/embed", json=payload)
-        resp.raise_for_status()
-        return resp.json()["embeddings"]
+        with httpx.Client(base_url=self.host, timeout=self.timeout) as c:
+            resp = c.post("/api/embed", json=payload)
+            resp.raise_for_status()
+            return resp.json()["embeddings"]
 
-    async def list_models(self) -> list[str]:
-        resp = await self._client.get("/api/tags")
-        resp.raise_for_status()
-        return [m["name"] for m in resp.json().get("models", [])]
+    def list_models(self) -> list[str]:
+        with httpx.Client(base_url=self.host, timeout=self.timeout) as c:
+            resp = c.get("/api/tags")
+            resp.raise_for_status()
+            return [m["name"] for m in resp.json().get("models", [])]
 
 
 ollama = OllamaClient()

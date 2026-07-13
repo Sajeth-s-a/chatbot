@@ -15,7 +15,17 @@ class Settings(BaseSettings):
     chroma_collection: str = "sops"
 
     retrieval_top_k: int = 5
+    retrieval_top_n_dense: int = 10
+    retrieval_top_n_bm25: int = 10
+    retrieval_final_k: int = 5
     retrieval_min_score: float = 0.25
+    ensemble_weight_dense: float = 0.5
+    ensemble_weight_bm25: float = 0.5
+
+    chat_temperature: float = 0.1
+
+    eval_golden_path: Path = Path("data/eval/golden.jsonl")
+    eval_reports_dir: Path = Path("data/eval/reports")
 
     api_host: str = "0.0.0.0"
     api_port: int = 8000

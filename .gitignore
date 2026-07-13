@@ -15,3 +15,8 @@ resources/*.docx
 resources/*.doc
 resources/*.pdf
 ~$*
+
+# Local tool / editor artifacts
+.claude/
+nohup.out
+*.log
