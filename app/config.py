@@ -30,5 +30,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
 
+    payments_detective_base_url: str = "https://localhost.csez.zohocorpin.com:8444"
+    payments_detective_cookie: str = ""
+    payments_detective_zcsrf_token: str = ""
+    payments_detective_verify_ssl: bool = True
+    payments_detective_timeout: float = 30.0
+
 
 settings = Settings()
